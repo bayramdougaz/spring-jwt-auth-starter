@@ -1,0 +1,36 @@
+# Runs the API with PostgreSQL:  docker compose up --build
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: authdb
+      POSTGRES_USER: auth
+      POSTGRES_PASSWORD: auth
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth -d authdb"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres
+      DB_URL: jdbc:postgresql://db:5432/authdb
+      DB_USERNAME: auth
+      DB_PASSWORD: auth
+      # Change these before deploying anywhere real.
+      JWT_SECRET: ${JWT_SECRET:-ZGV2LW9ubHktc2VjcmV0LWNoYW5nZS1tZS1pbi1wcm9kdWN0aW9uLXRoaXMtaXMtNjQtYnl0ZXMtbG9uZyEhIQ==}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin123!}
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:
